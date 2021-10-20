@@ -90,3 +90,87 @@ adder()
 #Pythonの関数オブジェクト一覧には属性__call__があり、関数オブジェクトの実体が__call__()を実装したfunctionクラスのインスタンスであることがわかる。__call__()はPythonをバックグラウンドで支えている機能の1つでもある。
 
 
+"""属性への動的アクセス"""
+#Pythonは動的型付き言語なので、プログラムの実行中にオブジェクトの属性を追加したり、削除できたりする。これらが可能なメソッドをうまく活用すると、コード量を大幅に削減することができる。ただし、使いすぎるとコードの可読性や保守性が損なわれるので注意が必要である。
+
+#__setattr__()：属性への代入で呼び出される
+#__setattr__()は、p.x = 1などの属性への代入で呼ばれる特殊メソッドである。この場合は__setattr__()の第2引数に'x'が、第3引数に1が渡されて呼び出される。
+#次の例では__setattr__()を活用し、属性の代入を属性名で制限している。
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    def __setattr__(self, name, value):
+        if name not in ('x', 'y'):
+            raise AttributeError('Not allowed')
+        super().__setattr__(name, value)
+
+p = Point(1, 2)
+p.z = 3
+
+p.x = 3
+p.x  # => 3
+
+#__setattr__()の内部でself.x = 1 と書くと、__setattr__()　が再度呼ばれるため無限ループとなり例外RecursionErrorが発生する。このため、__setattrの内部で自分自身に属性を追加する際には、必ず組み込み関数super()を使って基底クラスの__setattr__()を呼び出す。
+
+
+#__delattr__()：属性の削除で呼び出される。
+#__delattr__()は、属性の削除で呼び出される。それ以外は__setattr__()と同じである。
+#下記の例では、属性名を見て削除の実行を制限している。
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    def __delattr__(self, name):
+        if name in ('x', 'y'):
+            raise AttributeError('Not allowed')
+        super().__delattr__(name)
+
+p = Point(1, 2)
+del p.x
+
+
+#__getattr__(),  __getattribute__()：属性アクセスで呼び出される
+#__getattr__(), __getattribute__()は、どちらもp.xのような属性アクセスで呼び出され、第2引数に属性名'x'が渡される。両者の挙動には違いがあり、それを理解するためには、Pythonオブジェクトが持つ属性__dict__について知る必要がある。
+class Point:
+    pass
+
+p = Point()
+p.__dict__  # => {}
+
+#p.__dict__['x'] = 1 に変換される
+p.x = 1
+p.__dict__  # => {'x':1}
+
+#__dict__は直接書き込み可能
+p.__dict__['y'] = 2
+p.y  # => 2
+
+# 属性辞書__dict__には代入された属性が格納されている。インスタンスの名前空間の実態はこの辞書であり、属性の参照時にはまずこの辞書から検索が行われる。
+#__getattr__()と__getattribute__()の違い
+#__getattr__()は属性アクセス時に対象の名前が属性辞書__dict__に存在しない場合にのみ呼ばれ、__getattribute__()は全ての属性アクセスで呼び出される。これたの特殊メソッドを利用すると、実際にはインスタンスが持っていない属性でもあたかもその属性を持っているかのように振る舞いを定義することができる。
+#下記の例では、設定ファイルの情報をインスタンス属性のように参照する。
+#設定ファイル：config.json
+#この設定ファイルを扱うクラスを作成する。インスタンスconfは属性urlを持っていないが、conf.urlのようにアクセスされると設定ファイルに記載された値を返す。
+import json
+
+class Config:
+    def __init__(self, filename):
+        self.config = json.load(open(filename))
+    def __getattr__(self, name):
+        if name in self.config:
+            return self.config[name]
+        #存在しない設定値へのアクセスはエラーとする
+        raise AttributeError()
+
+conf = Config('config.json')
+conf.url   # => 'https://api.github.com/'
+
+
+
+
+
+
+        
+
