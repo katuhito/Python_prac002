@@ -219,6 +219,89 @@ class Reverser:
 
 
 
+"""コンテナオブジェクト"""
+#コンテナオブジェクトは、リストやタプル、辞書などの他のオブジェクトへの参照を持つプロジェクトである。コンテナとして振る舞うクラスが持つ特殊メソッドは数が多く、また、実現したい性質によっても変わる。
+
+#__getitem__(),__setitem__()：インデックスやキーによる操作
+#特殊メソッド__getitem__()は、インデックスやキーによるアクセス（x[1],x['key']など）で呼び出される。また、インデックスやキーを使った代入荷には特殊メソッド__setitem__()が呼び出される。
+#下記の例では、これらを利用してキー毎に参照された回数と代入された回数を数えている。回数の記録には標準ライブラリのcollections.defaultdictクラスを利用している。これは初期値を設定できる辞書で、defaultdict(int)のようにインスタンス化すると初期値はint型の0になる。
+
+from collections import defaultdict
+
+class CountDict:
+    def __init__(self):
+        self._data = {}
+        self._get_count = defaultdict(int)
+        self._set_count = defaultdict(int)
+    def __getitem__(self, key):
+        #c['x']など参照時に呼ばれる
+        self._get_count[key] += 1
+        return self._data[key]
+    def __setitem__(self, key, value):
+        #c['x'] = 1 など代入時に呼ばれる
+        self._set_count[key] += 1
+        self._data[key] = value
+    @property
+    def count(self):
+        return {
+            'set': list(self._set_count.items()),
+            'get': list(self._get_count.items()),
+        }
+
+c = CountDict()
+c['x'] = 1
+c['x']
+
+c['x'] = 2
+c['x'] = 3
+
+#参照、代入された回数を返す
+c.count
+# => {'set': [('x', 2), ('y', 1)], 'get': [('x', 1)]}
+
+#__contains__()：オブジェクトの有無を判定する
+#特殊メソッド__contains__()を実装するとin演算子に対応できる。1 in x を実行すると、オブジェクトxの__contains__()の第2引数に1が渡されて呼び出され、その戻り値の真理値の評価の結果がこの式の結果となる。
+
+class oddNumbers:
+    def __contains__(self, item):
+        try:
+            return item % 2 == 1
+        except:
+            return False
+
+odds = oddNumbers()
+1 in odds
+# => True
+4 in odds
+# => False
+
+
+#__contains__()を実装しないクラスでもin演算子を利用できる場合がある=>
+
+class Reverser:
+    def __init__(self, x):
+        self.x = x
+    def __iter__(self):
+        return self
+    def __next__(self):
+        try:
+            return self.x.pop()
+        except IndexError:
+            raise StopIteration()
+
+r = Rverser([1,2,3])
+2 in r
+# => True
+4 in r
+# => False
+
+
+#Pythonのin演算子は、__contains__()が実装されていない場合は__iter__()を使って得た各要素に一致するものがないかどうかを確認する。さらに、__contains__()と__iter__()のどちらも実装したいない場合には__getitem__()が利用される。
+#実際にコンテナを定義する際には、効率よくin演算子を使えるように__contains__()を実装する
+
+
+
+
 
         
 
